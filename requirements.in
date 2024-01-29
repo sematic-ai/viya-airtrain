@@ -1,0 +1,4 @@
+mypy
+scipy
+tiktoken
+openai

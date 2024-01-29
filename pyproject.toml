@@ -1,0 +1,61 @@
+[project]
+name = "viya-airtrain"
+description = "Project for preprocessing ViyaMD data for Airtrain"
+version = "0.0.1"
+requires-python = ">=3.10, <=3.11"
+dynamic = ["dependencies"]
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 90
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 90
+select = ["E", "F", "I"]
+
+[tool.ruff.isort]
+known-first-party = ["tldrbot"]
+
+# Use a single line after each import block.
+lines-after-imports = 2
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.in"] }
+
+[tool.pylsp.plugins.ruff]
+enabled = true
+
+[tool.pylsp.plugins.black]
+enabled = true
+
+[[tool.mypy.overrides]]
+module = "sematic.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "testing.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "yaml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "jsonschema.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "transformers.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "google.oauth2.credentials.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "scipy.*"
+ignore_missing_imports = true
