@@ -149,6 +149,7 @@ class ConversationTurn(TypedDict):
     role: Role
     agent_name: AgentName
     prior_turns: list[SimpleTurn]
+    rendered_prior_turns: str
     content: str
     task_prompt: str | None
     chief_complaint: str

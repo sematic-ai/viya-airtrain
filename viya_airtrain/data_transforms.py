@@ -23,6 +23,8 @@ def raw_transcript_to_conversation_turns(
         if role == "user":
             continue
 
+        rendered_prior_turns = _render_prior_turns(simple_turns[:i])
+
         prior_agent_name = agent_name
         agent_name = message["agent_name"]
 
@@ -31,6 +33,7 @@ def raw_transcript_to_conversation_turns(
             message_index=i,
             role=role,
             prior_turns=simple_turns[:i],
+            rendered_prior_turns=rendered_prior_turns,
             chief_complaint=patient_profile["chief_complaint"],
             patient_age_in_years=patient_profile["age_in_years"],
             patient_first_name=patient_profile["first_name"],
@@ -68,6 +71,7 @@ def raw_transcript_to_conversation_turns(
         # If the final active agent was one of the included ones,
         # show its hidden message that says it's done.
         i = len(full_transcript["messages"])
+        rendered_prior_turns = _render_prior_turns(simple_turns[:i])
         turns.append(
             ConversationTurn(
                 is_hidden=True,
@@ -78,6 +82,7 @@ def raw_transcript_to_conversation_turns(
                 message_index=i,
                 role=role,
                 prior_turns=simple_turns[:i],
+                rendered_prior_turns=rendered_prior_turns,
                 chief_complaint=patient_profile["chief_complaint"],
                 patient_age_in_years=patient_profile["age_in_years"],
                 patient_first_name=patient_profile["first_name"],
@@ -94,3 +99,11 @@ def messages_as_simple_turns(raw_messages: list[RawMessage]) -> list[SimpleTurn]
         turns.append(SimpleTurn(role=message["role"], content=message["content"]))
 
     return turns
+
+
+def _render_prior_turns(prior_turns: list[SimpleTurn]) -> str:
+    def render_turn(turn: SimpleTurn):
+        role_marker = "<|user|>" if turn["role"] == "user" else "<|assistant|>"
+        return f"{role_marker}\n{turn['content']}"
+
+    return "\n".join(render_turn(turn) for turn in prior_turns)
