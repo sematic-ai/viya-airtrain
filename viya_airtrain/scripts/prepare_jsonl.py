@@ -57,7 +57,9 @@ def split_transcripts(
     n_test_samples = max(n_test_samples, 1)
     test_transcripts = random.sample(transcripts, n_test_samples)
 
-    test_transcript_session_ids = {transcript["session_id"] for transcript in transcripts}
+    test_transcript_session_ids = {
+        transcript["session_id"] for transcript in test_transcripts
+    }
 
     train_transcripts = list(
         filter(

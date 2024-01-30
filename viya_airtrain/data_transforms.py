@@ -103,7 +103,7 @@ def messages_as_simple_turns(raw_messages: list[RawMessage]) -> list[SimpleTurn]
 
 def _render_prior_turns(prior_turns: list[SimpleTurn]) -> str:
     def render_turn(turn: SimpleTurn):
-        role_marker = "<|user|>" if turn["role"] == "user" else "<|assistant|>"
-        return f"{role_marker}\n{turn['content']}"
+        role_marker = "Patient" if turn["role"] == "user" else "Viya"
+        return f"{role_marker}: {turn['content']}"
 
     return "\n".join(render_turn(turn) for turn in prior_turns)
