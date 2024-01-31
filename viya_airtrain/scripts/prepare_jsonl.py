@@ -4,7 +4,10 @@ import pdb
 import random
 from pathlib import Path
 
-from viya_airtrain.data_transforms import raw_transcript_to_conversation_turns
+from viya_airtrain.data_transforms import (
+    raw_transcript_to_conversation_turns,
+    replace_names_in_transcripts,
+)
 from viya_airtrain.typed_dicts import AgentName, ConversationTurn, FullRawTranscript
 
 
@@ -90,6 +93,7 @@ def process_split(
 def main():
     args = parse_args()
     all_raw_transcripts = list_raw_transcripts(args.source_dir)
+    all_raw_transcripts = replace_names_in_transcripts(all_raw_transcripts)
 
     train_transcripts, test_transcripts = split_transcripts(all_raw_transcripts)
 

@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+from viya_airtrain.names import get_names
 from viya_airtrain.task_prompts import TASK_PROMPT_BY_AGENT_NAME
 from viya_airtrain.typed_dicts import (
     ALL_DONE,
@@ -99,6 +102,31 @@ def messages_as_simple_turns(raw_messages: list[RawMessage]) -> list[SimpleTurn]
         turns.append(SimpleTurn(role=message["role"], content=message["content"]))
 
     return turns
+
+
+def replace_name_in_transcript(
+    transcript: FullRawTranscript, first_name: str, last_name: str
+) -> FullRawTranscript:
+    new_transcript = deepcopy(transcript)
+    old_first_name = new_transcript["sim_context"]["patient_profile"]["first_name"]
+    old_last_name = new_transcript["sim_context"]["patient_profile"]["last_name"]
+    new_transcript["sim_context"]["patient_profile"]["first_name"] = first_name
+    new_transcript["sim_context"]["patient_profile"]["last_name"] = last_name
+
+    for message in new_transcript["messages"]:
+        message["content"] = message["content"].replace(old_first_name, first_name)
+        message["content"] = message["content"].replace(old_last_name, last_name)
+
+    return new_transcript
+
+
+def replace_names_in_transcripts(
+    transcripts: list[FullRawTranscript],
+) -> list[FullRawTranscript]:
+    return [
+        replace_name_in_transcript(transcript, name[0], name[1])
+        for transcript, name in zip(transcripts, get_names())
+    ]
 
 
 def _render_prior_turns(prior_turns: list[SimpleTurn]) -> str:
