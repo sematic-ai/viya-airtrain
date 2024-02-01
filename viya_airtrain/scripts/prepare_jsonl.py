@@ -84,6 +84,8 @@ def process_split(
     for transcript in transcripts:
         turns.extend(raw_transcript_to_conversation_turns(transcript, include_agents))
 
+    random.seed(SEED)
+    random.shuffle(turns)
     write_turns(output_path, turns)
 
     if interactive:
