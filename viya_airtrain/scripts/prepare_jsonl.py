@@ -20,10 +20,30 @@ def parse_args() -> argparse.Namespace:
         "Transform from raw transcripts to data for Airtrain to use."
     )
 
-    parser.add_argument("--source-dir", type=Path, required=True)
-    parser.add_argument("--destination", type=Path, required=True)
-    parser.add_argument("--test-destination", type=Path, required=True)
-    parser.add_argument("--interactive", default=False, action="store_true")
+    parser.add_argument(
+        "--source-dir",
+        type=Path,
+        required=True,
+        help="A directory containing .json files with full transcripts",
+    )
+    parser.add_argument(
+        "--destination",
+        type=Path,
+        required=True,
+        help="Path for jsonl file where the training data will be put.",
+    )
+    parser.add_argument(
+        "--test-destination",
+        type=Path,
+        required=True,
+        help="Path for jsonl file where test data will be put.",
+    )
+    parser.add_argument(
+        "--interactive",
+        default=False,
+        action="store_true",
+        help="Advanced: open a pdb session while writing data.",
+    )
     parser.add_argument(
         "--agent",
         dest="include_agents",
@@ -38,6 +58,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def list_raw_transcripts(path: Path) -> list[FullRawTranscript]:
+    """Read raw transcripts from .json files in given directory"""
     transcripts = []
     for json_path in path.glob("*.json"):
         with open(json_path, "r") as fp:
@@ -46,6 +67,7 @@ def list_raw_transcripts(path: Path) -> list[FullRawTranscript]:
 
 
 def write_turns(path: Path, turns: list[ConversationTurn]) -> None:
+    """Write individual conversation turns as rows in given jsonl file."""
     with open(path, "w+") as fp:
         for turn in turns:
             fp.write(f"{json.dumps(turn)}\n")
@@ -54,6 +76,7 @@ def write_turns(path: Path, turns: list[ConversationTurn]) -> None:
 def split_transcripts(
     transcripts: list[FullRawTranscript],
 ) -> tuple[list[FullRawTranscript], list[FullRawTranscript]]:
+    """Split transcripts such that some are used for test and some for train."""
     random.seed(SEED)
 
     n_test_samples = int(TEST_FRACTION * len(transcripts))
@@ -80,6 +103,7 @@ def process_split(
     transcripts: list[FullRawTranscript],
     interactive: bool,
 ):
+    """Given full transcripts, preprocess them and write to a jsonl file on disk."""
     turns = []
     for transcript in transcripts:
         turns.extend(raw_transcript_to_conversation_turns(transcript, include_agents))

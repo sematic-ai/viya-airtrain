@@ -15,6 +15,22 @@ from viya_airtrain.typed_dicts import (
 def raw_transcript_to_conversation_turns(
     full_transcript: FullRawTranscript, include_agents: list[AgentName]
 ) -> list[ConversationTurn]:
+    """Convert from chat transcripts to a row-per-turn.
+
+    Parameters
+    ----------
+    full_transcript:
+        A single transcript of a full conversation between Viya and a user.
+    include_agents:
+        Only agents with names in this list will have their conversation turns
+        included in the output.
+
+    Returns
+    -------
+    A list of individual turns from the conversation, filtered to only include
+    ones for the specified agents. ALL_DONE rows which are implicit in the source
+    data will also be included.
+    """
     turns: list[ConversationTurn] = []
     sim_context = full_transcript["sim_context"]
     patient_profile = sim_context["patient_profile"]
@@ -97,6 +113,7 @@ def raw_transcript_to_conversation_turns(
 
 
 def messages_as_simple_turns(raw_messages: list[RawMessage]) -> list[SimpleTurn]:
+    """Shorten raw messages into a more simple format with only role & content."""
     turns: list[SimpleTurn] = []
     for message in raw_messages:
         turns.append(SimpleTurn(role=message["role"], content=message["content"]))
@@ -107,6 +124,7 @@ def messages_as_simple_turns(raw_messages: list[RawMessage]) -> list[SimpleTurn]
 def replace_name_in_transcript(
     transcript: FullRawTranscript, first_name: str, last_name: str
 ) -> FullRawTranscript:
+    """Replace the name of the patient in the source transcript with the specified one"""
     new_transcript = deepcopy(transcript)
     old_first_name = new_transcript["sim_context"]["patient_profile"]["first_name"]
     old_last_name = new_transcript["sim_context"]["patient_profile"]["last_name"]
@@ -123,6 +141,7 @@ def replace_name_in_transcript(
 def replace_names_in_transcripts(
     transcripts: list[FullRawTranscript],
 ) -> list[FullRawTranscript]:
+    """Replace all the patient names in transcripts with randomly generated ones."""
     return [
         replace_name_in_transcript(transcript, name[0], name[1])
         for transcript, name in zip(transcripts, get_names())
@@ -130,6 +149,8 @@ def replace_names_in_transcripts(
 
 
 def _render_prior_turns(prior_turns: list[SimpleTurn]) -> str:
+    """Render prior turns from the conversation into a single string."""
+
     def render_turn(turn: SimpleTurn):
         role_marker = "Patient" if turn["role"] == "user" else "Viya"
         return f"{role_marker}: {turn['content']}"

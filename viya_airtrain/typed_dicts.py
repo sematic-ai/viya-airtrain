@@ -1,3 +1,4 @@
+"""Types for usage in the rest of the scripts."""
 from typing import Literal, TypedDict
 
 
@@ -10,6 +11,8 @@ Role = AssistantRole | UserRole
 
 Summary = str
 
+# Explicitly typing each complaint agent name is kind of overkill.
+# Feel free to discard.
 ChiefComplaintAgent = Literal["ChiefComplaintAgent"]
 ChiefComplaintAgentADHD = Literal["ChiefComplaintAgent:ADHD"]
 ChiefComplaintAgentAbPain = Literal["ChiefComplaintAgent:Abdominal Pain"]
@@ -91,6 +94,8 @@ AgentName = (
 
 
 class RawMessage(TypedDict):
+    """A message in the raw transcripts"""
+
     role: Role
     content: str
     agent_name: AgentName
@@ -103,6 +108,8 @@ class RawMessage(TypedDict):
 
 
 class PatientProfile(TypedDict):
+    """A patient profile from the raw transcripts"""
+
     first_name: str
     last_name: str
     gender: str
@@ -114,6 +121,8 @@ class PatientProfile(TypedDict):
 
 
 class SimContext(TypedDict):
+    """A sim context from the raw transcripts"""
+
     task_index: int
     agent_type: str
     working_dir: str
@@ -127,6 +136,8 @@ class SimContext(TypedDict):
 
 
 class FullRawTranscript(TypedDict):
+    """The full raw transcript in each source json file."""
+
     session_id: str
     messages: list[RawMessage]
     summary: None | Summary
@@ -138,11 +149,15 @@ class FullRawTranscript(TypedDict):
 
 
 class SimpleTurn(TypedDict):
+    """Minimal representation of a chat turn."""
+
     role: Role
     content: str
 
 
 class ConversationTurn(TypedDict):
+    """A row in final output jsonl."""
+
     session_id: str
     message_index: int
     is_hidden: bool

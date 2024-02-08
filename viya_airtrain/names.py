@@ -1,3 +1,4 @@
+"""Names to randomize into data to avoid overfit to specific patient names."""
 import random
 from itertools import cycle, product
 from typing import Iterable
