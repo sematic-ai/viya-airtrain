@@ -175,9 +175,11 @@ class ConversationTurn(TypedDict):
     patient_gender: str
 
 
-class SimpleTranscript(TypedDict):
+class AgentTranscript(TypedDict):
     messages: list[SimpleTurn]
     session_id: str
+    agent_turn_indexes: list[int]
+    agent_name: AgentName
     patient_first_name: str
     patient_last_name: str
     patient_gender: str

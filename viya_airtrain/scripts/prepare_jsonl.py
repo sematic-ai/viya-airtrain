@@ -7,16 +7,17 @@ from pathlib import Path
 
 from viya_airtrain.core_prompt_paraphrasing import randomized_core_prompt_templates
 from viya_airtrain.data_transforms import (
+    multiplex_agent_transcript,
     randomly_select_agent,
     raw_transcript_to_conversation_turns,
     replace_names_in_transcripts,
-    to_simple_transcript,
+    to_agent_transcript,
 )
 from viya_airtrain.typed_dicts import (
     AgentName,
+    AgentTranscript,
     ConversationTurn,
     FullRawTranscript,
-    SimpleTranscript,
 )
 
 
@@ -91,7 +92,7 @@ def list_raw_transcripts(path: Path) -> list[FullRawTranscript]:
 
 
 def write_jsonls(
-    path: Path, rows: list[ConversationTurn] | list[SimpleTranscript]
+    path: Path, rows: list[ConversationTurn] | list[AgentTranscript]
 ) -> None:
     """Write output rows in given jsonl file."""
     with open(path, "w+") as fp:
@@ -141,25 +142,29 @@ def process_split_turn_mode(
 
 def process_split_conversation_mode(
     output_path: Path,
+    is_train: bool,
     include_agents: list[AgentName],
     transcripts: list[FullRawTranscript],
     interactive: bool,
 ):
     """Given full transcripts, preprocess them and write to a jsonl file on disk."""
-    simple_transcripts: list[SimpleTranscript] = []
+    agent_transcripts: list[AgentTranscript] = []
     for transcript, system_prompt_template in zip(
         transcripts, randomized_core_prompt_templates()
     ):
         selected_agent = randomly_select_agent(include_agents, transcript)
-        simple_transcript = to_simple_transcript(
-            transcript,
-            selected_agent,
-            system_prompt_template,
+        agent_transcript = to_agent_transcript(
+            transcript=transcript,
+            selected_agent=selected_agent,
+            system_prompt_template=system_prompt_template,
+            use_fixed_task_prompts=not is_train,
         )
-        simple_transcripts.append(simple_transcript)
+        if is_train:
+            agent_transcripts.append(agent_transcript)
+        else:
+            agent_transcripts.extend(multiplex_agent_transcript(agent_transcript))
 
-    random.shuffle(simple_transcripts)
-    write_jsonls(output_path, simple_transcripts)
+    write_jsonls(output_path, agent_transcripts)
 
     if interactive:
         pdb.set_trace()
@@ -177,12 +182,14 @@ def main():
     if args.output_mode == OutputMode.conversation:
         process_split_conversation_mode(
             output_path=args.destination,
+            is_train=True,
             include_agents=args.include_agents,
             transcripts=train_transcripts,
             interactive=args.interactive,
         )
         process_split_conversation_mode(
             output_path=args.test_destination,
+            is_train=False,
             include_agents=args.include_agents,
             transcripts=test_transcripts,
             interactive=args.interactive,

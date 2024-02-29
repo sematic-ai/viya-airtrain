@@ -7,10 +7,10 @@ from viya_airtrain.task_prompts import get_task_prompt
 from viya_airtrain.typed_dicts import (
     ALL_DONE,
     AgentName,
+    AgentTranscript,
     ConversationTurn,
     FullRawTranscript,
     RawMessage,
-    SimpleTranscript,
     SimpleTurn,
 )
 
@@ -161,21 +161,47 @@ def _render_prior_turns(prior_turns: list[SimpleTurn]) -> str:
     return "\n".join(render_turn(turn) for turn in prior_turns)
 
 
-def to_simple_transcript(
+def to_agent_transcript(
     transcript: FullRawTranscript,
     selected_agent: AgentName,
     system_prompt_template: str,
-) -> SimpleTranscript:
-    """Extract the conversation to a simple transcript ending with the specified agent.
+    use_fixed_task_prompts: bool,
+) -> AgentTranscript:
+    """Extract the conversation to an agent-specific transcript ending on the agent's turn
 
     A system prompt will be rendered including patient information and the task prompt
     for the agent.
+
+    Parameters
+    ----------
+    transcript:
+        The original raw transcript
+    selected_agent:
+        The agent that should be considered active for the last turn of the resulting
+        transcript.
+    system_prompt_template:
+        A prompt template for the system prompt.
+    use_fixed_task_prompts:
+        If True, then for each given agent, that agent's task prompt will always be
+        the same.
     """
     simple_turns: list[SimpleTurn] = []
     session_id = transcript["session_id"]
-    found_agent = False
-    for message in transcript["messages"]:
-        if found_agent and message["role"] == "user":
+
+    agent_start_turn_index: int | None = None
+    for i, message in enumerate(transcript["messages"]):
+        next_turn = (
+            transcript["messages"][i + 1] if i + 1 < len(transcript["messages"]) else None
+        )
+        next_turn_is_agents = (
+            next_turn is not None and next_turn["agent_name"] == selected_agent
+        )
+        next_turn_is_users = next_turn is not None and next_turn["role"] == "user"
+        next_turn_is_end_or_different_agent = next_turn is None or not (
+            next_turn_is_agents or next_turn_is_users
+        )
+        agent_has_started = agent_start_turn_index is not None
+        if agent_has_started and next_turn_is_end_or_different_agent:
             simple_turns.append(
                 SimpleTurn(role=message["role"], content=message["content"])
             )
@@ -184,27 +210,55 @@ def to_simple_transcript(
 
         simple_turns.append(SimpleTurn(role=message["role"], content=message["content"]))
 
-        if message["agent_name"] == selected_agent:
-            found_agent = True
+        if message["agent_name"] == selected_agent and not agent_has_started:
+            agent_start_turn_index = i
 
-    if not found_agent:
+    if agent_start_turn_index is None:
         raise ValueError(
             f"Session {session_id} has no inclusion of agent {selected_agent}"
         )
 
-    task_prompt = get_task_prompt(selected_agent)
+    task_prompt = get_task_prompt(selected_agent, use_fixed_task_prompts)
     system_prompt = render_system_prompt(system_prompt_template, transcript, task_prompt)
-    simple_turns.insert(0, SimpleTurn(role="system", content=system_prompt))
 
-    return SimpleTranscript(
+    simple_turns.insert(0, SimpleTurn(role="system", content=system_prompt))
+    agent_start_turn_index += 1  # because of the system message insertion
+
+    stop_index = len(simple_turns) + 1
+    agent_turn_indexes = list(range(agent_start_turn_index, stop_index, 2))
+
+    return AgentTranscript(
         session_id=session_id,
+        agent_name=selected_agent,
         messages=simple_turns,
+        agent_turn_indexes=agent_turn_indexes,
         patient_first_name=transcript["sim_context"]["patient_profile"]["first_name"],
         patient_last_name=transcript["sim_context"]["patient_profile"]["last_name"],
         patient_gender=transcript["sim_context"]["patient_profile"]["gender"],
         patient_age_in_years=transcript["sim_context"]["patient_profile"]["age_in_years"],
         task_prompt=task_prompt,
     )
+
+
+def multiplex_agent_transcript(
+    agent_transcript: AgentTranscript,
+) -> list[AgentTranscript]:
+    """Transform one agent transcript into many
+
+    To do this, each ending turn in the source transcript that belongs to
+    the agent will result in a new transcript which is identical except that
+    it ends at that turn. So if the agent took 5 turns, for example, there will
+    be 5 result transcripts, one ending at each of the agent turns in the source.
+    """
+    result_transcripts: list[AgentTranscript] = []
+    for turn_index in agent_transcript["agent_turn_indexes"]:
+        truncated_transcript = AgentTranscript(**agent_transcript)
+        truncated_transcript["messages"] = agent_transcript["messages"][: turn_index + 1]
+        truncated_transcript["agent_turn_indexes"] = [
+            idx for idx in truncated_transcript["agent_turn_indexes"] if idx <= turn_index
+        ]
+        result_transcripts.append(truncated_transcript)
+    return result_transcripts
 
 
 def render_system_prompt(
