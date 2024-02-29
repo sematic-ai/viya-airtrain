@@ -158,6 +158,87 @@ TASK_PROMPT_BY_AGENT_NAME = {
                 "and if they've traveled outside of the country in the last 6 months. "
                 "Get more details about each of these where applicable."
             ),
+            (
+                "Determine any pertinent details about the patient's social history. "
+                "Some examples of things you should ask about include: "
+                "(a) marital status "
+                "(b) basic employment information "
+                "(c) substance use (smoking, drinking, recreational drugs) "
+                "(d) any travel outside the country in the last half year. "
+                "In each of these cases, collect more details if they respond with "
+                "anything worth following up on."
+            ),
+            (
+                "Scrutinize the patient's lifestyle where relevant to their overall "
+                "health. Collect more information any time there is something that "
+                "merits it. Some things to ask about would be any visits to other "
+                "nations, the nature of their spousal relations (or absence thereof), "
+                "or any jobs they hold. You also probably want to discuss their habits "
+                "when it comes to substances. Specifically drugs, alchohol, and "
+                "tobacco/smoking."
+            ),
+            (
+                "Ascertain what you're able to about overall health factors, being sure "
+                "to ask pertinent further queries when necessary. Be sure to identify "
+                "their living situation, like if they're in a domestic partnership. "
+                "You'll also be responsible for determining their job status and "
+                "recent international travel (within the last few months). "
+                "Alchohol, drigs, smoking? Ask about those as well."
+            ),
+            (
+                "Inquire as to any lifestyle factors. Substance usage should be "
+                "on your list of questions, specifically smoking, alchohol or "
+                "recreational drugs. Frequency and amount of each of these should "
+                "be determined. As a general note for any of your questions: ask "
+                "for more detail if you think it'll help. Their marital status and "
+                "job status are both things to get intel on. Travel to "
+                "places other than the country they live in is also relevant, but "
+                "only if it's as recent as the last 6 months."
+            ),
+            (
+                "Compile a comprehensive overview of the patient's daily habits and "
+                "social behaviors. This should encompass their current employment  "
+                "status, marital or relationship status, and any engagement with "
+                "substances such as alcohol, tobacco, or illegal drugs. "
+                "Additionally, verify whether they have traveled internationally "
+                "within the past six months. Whenever a response seems to "
+                "warrant further exploration, delve deeper for more specifics."
+            ),
+            (
+                "Examine the various aspects of the patient's personal and social "
+                "life for health implications. This includes their relationship "
+                "status, whether they are actively employed, their usage of "
+                "substances including alcohol, smoking, and drugs, and any "
+                "recent travels abroad, specifically within the last six months. "
+                "Should any of these inquiries yield noteworthy information, "
+                "pursue additional details accordingly."
+            ),
+            (
+                "Initiate a detailed inquiry into the patient's lifestyle choices "
+                "and social circumstances. Key areas to cover include marital or "
+                "partnership status, current occupation, habits regarding the use "
+                "of alcohol, cigarettes, and recreational drugs, as well as any "
+                "foreign travel undertaken in the recent six months. "
+                "Encourage a deeper conversation on any point that seems "
+                "relevant for a thorough understanding."
+            ),
+            (
+                "Probe into the patient's life to understand factors that could "
+                "affect their health. Begin with questions about their "
+                "relationship status, employment, and habits related to the "
+                "consumption of alcohol, smoking, and drug use. "
+                "Don't forget to ask about any international travel within the "
+                "last six months. Expand on any area where the initial response "
+                "suggests more information could be gleaned."
+            ),
+            (
+                "Survey the patient's lifestyle for any health-affecting behaviors "
+                "or conditions. This should include checking on their marital status, "
+                "employment details, use of substances like tobacco, alcohol, and "
+                "drugs, plus any travel outside the country in the past six months. "
+                "For each aspect, if the response indicates a need for further "
+                "information, inquire more deeply to gather comprehensive details."
+            ),
         ]
     ),
 }
