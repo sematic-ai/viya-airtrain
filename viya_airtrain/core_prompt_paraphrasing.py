@@ -335,7 +335,7 @@ TASK_META_VARIATIONS = [
     "Focus for the time being on the task of {{task_prompt}}",
     "Now the task is to {{task_prompt}}",
     "The task set before you is to {{task_prompt}}",
-    "For now, you should {{task prompt}}",
+    "For now, you should {{task_prompt}}",
     "Handle this part of the conversation by focusing on the task of {{task_prompt}}",
     "Please, for now, do the task of {{task_prompt}}",
 ]
@@ -404,7 +404,7 @@ def randomized_core_prompt_templates() -> Iterable[str]:
 
     for subsection_permutation in cycle(subsection_perms):
         parts = [
-            next(subsection_variations[subsection])
+            next(subsection_variations[subsection])  # type: ignore
             for subsection in subsection_permutation
         ]
         yield " ".join(parts)

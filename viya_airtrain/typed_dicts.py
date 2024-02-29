@@ -7,7 +7,8 @@ ALL_DONE = "ALL_DONE"
 
 AssistantRole = Literal["assistant"]
 UserRole = Literal["user"]
-Role = AssistantRole | UserRole
+SystemRole = Literal["system"]
+Role = AssistantRole | UserRole | SystemRole
 
 Summary = str
 
@@ -172,3 +173,8 @@ class ConversationTurn(TypedDict):
     patient_first_name: str
     patient_last_name: str
     patient_gender: str
+
+
+class SimpleTranscript(TypedDict):
+    messages: list[SimpleTurn]
+    session_id: str

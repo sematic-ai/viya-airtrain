@@ -1,13 +1,16 @@
+import random
+import re
 from copy import deepcopy
 
 from viya_airtrain.names import get_names
-from viya_airtrain.task_prompts import TASK_PROMPT_BY_AGENT_NAME
+from viya_airtrain.task_prompts import get_task_prompt
 from viya_airtrain.typed_dicts import (
     ALL_DONE,
     AgentName,
     ConversationTurn,
     FullRawTranscript,
     RawMessage,
+    SimpleTranscript,
     SimpleTurn,
 )
 
@@ -68,7 +71,7 @@ def raw_transcript_to_conversation_turns(
                     is_hidden=True,
                     agent_name=prior_agent_name,
                     content=ALL_DONE,
-                    task_prompt=TASK_PROMPT_BY_AGENT_NAME[prior_agent_name],
+                    task_prompt=get_task_prompt(prior_agent_name),
                     **base_kwargs,  # type: ignore
                 )
             )
@@ -81,7 +84,7 @@ def raw_transcript_to_conversation_turns(
                 is_hidden=False,
                 agent_name=agent_name,
                 content=message["content"],
-                task_prompt=TASK_PROMPT_BY_AGENT_NAME[agent_name],
+                task_prompt=get_task_prompt(agent_name),
                 **base_kwargs,  # type: ignore
             )
         )
@@ -96,7 +99,7 @@ def raw_transcript_to_conversation_turns(
                 is_hidden=True,
                 agent_name=agent_name,
                 content=ALL_DONE,
-                task_prompt=TASK_PROMPT_BY_AGENT_NAME[agent_name],
+                task_prompt=get_task_prompt(agent_name),
                 session_id=full_transcript["session_id"],
                 message_index=i,
                 role=role,
@@ -156,3 +159,76 @@ def _render_prior_turns(prior_turns: list[SimpleTurn]) -> str:
         return f"{role_marker}: {turn['content']}"
 
     return "\n".join(render_turn(turn) for turn in prior_turns)
+
+
+def to_simple_transcript(
+    transcript: FullRawTranscript,
+    selected_agent: AgentName,
+    system_prompt_template: str,
+) -> SimpleTranscript:
+    """Extract the conversation to a simple transcript ending with the specified agent.
+
+    A system prompt will be rendered including patient information and the task prompt
+    for the agent.
+    """
+    simple_turns: list[SimpleTurn] = []
+    session_id = transcript["session_id"]
+    found_agent = False
+    for message in transcript["messages"]:
+        if found_agent and message["role"] == "user":
+            simple_turns.append(
+                SimpleTurn(role=message["role"], content=message["content"])
+            )
+            simple_turns.append(SimpleTurn(role="assistant", content="ALL_DONE"))
+            break
+
+        simple_turns.append(SimpleTurn(role=message["role"], content=message["content"]))
+
+        if message["agent_name"] == selected_agent:
+            found_agent = True
+
+    if not found_agent:
+        raise ValueError(
+            f"Session {session_id} has no inclusion of agent {selected_agent}"
+        )
+
+    system_prompt = render_system_prompt(
+        system_prompt_template, transcript, selected_agent
+    )
+    simple_turns.insert(0, SimpleTurn(role="system", content=system_prompt))
+
+    return SimpleTranscript(session_id=session_id, messages=simple_turns)
+
+
+def render_system_prompt(
+    system_prompt_template: str, transcript: FullRawTranscript, selected_agent: AgentName
+):
+    context = dict(
+        patient_first_name=transcript["sim_context"]["patient_profile"]["first_name"],
+        patient_last_name=transcript["sim_context"]["patient_profile"]["last_name"],
+        patient_gender=transcript["sim_context"]["patient_profile"]["gender"],
+        patient_age_in_years=transcript["sim_context"]["patient_profile"]["age_in_years"],
+        task_prompt=get_task_prompt(selected_agent),
+    )
+    prompt = system_prompt_template
+    for key, value in context.items():
+        pattern = r"\{\{\s*" + key + r"\s*\}\}"
+        prompt = re.sub(pattern=pattern, repl=value, string=prompt)
+
+    return prompt
+
+
+def randomly_select_agent(
+    agent_names: list[AgentName], transcript: FullRawTranscript
+) -> AgentName:
+    "Choose an agent name for an agent appearing in the conversation"
+    appearing_agents = set()
+    session_id = transcript["session_id"]
+    for message in transcript["messages"]:
+        appearing_agents.add(message["agent_name"])
+    choices = appearing_agents.intersection(agent_names)
+    if len(choices) == 0:
+        raise ValueError(
+            f"Transcript {session_id} contains none of: {', '.join(agent_names)}"
+        )
+    return random.choice(list(choices))

@@ -36,6 +36,7 @@ Example:
 python3 viya_airtrain/scripts/prepare_jsonl.py \
     --source-dir ~/datasets/viya1/all/ \
     --destination ~/datasets/viya1/jsonls/train-history.jsonl \
+    --output-mode turn \
     --test-destination ~/datasets/viya1/jsonls/test-history.jsonl \
     --agent MedicalHistoryAgent \
     --agent FamilyHistoryAgent \
