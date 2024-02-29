@@ -1,7 +1,7 @@
 from itertools import cycle
 
 
-TASK_PROMPT_BY_AGENT_NAME = {
+TASK_PROMPTS_BY_AGENT_NAME = {
     "FamilyHistoryAgent": cycle(
         [
             (
@@ -244,5 +244,19 @@ TASK_PROMPT_BY_AGENT_NAME = {
 }
 
 
-def get_task_prompt(agent_name: str):
-    return next(TASK_PROMPT_BY_AGENT_NAME[agent_name])
+FIXED_TASK_PROMPTS_BY_AGENT_NAME = {
+    agent_name: next(iterable)
+    for agent_name, iterable in TASK_PROMPTS_BY_AGENT_NAME.items()
+}
+
+
+def get_task_prompt(agent_name: str, fixed=False):
+    """Get a task prompt for the given agent.
+
+    If 'fixed' is False, (the default) different variations
+    of the agent's task prompt will be returned as you call
+    this function.
+    """
+    if fixed:
+        return FIXED_TASK_PROMPTS_BY_AGENT_NAME[agent_name]
+    return next(TASK_PROMPTS_BY_AGENT_NAME[agent_name])

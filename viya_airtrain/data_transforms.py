@@ -192,23 +192,30 @@ def to_simple_transcript(
             f"Session {session_id} has no inclusion of agent {selected_agent}"
         )
 
-    system_prompt = render_system_prompt(
-        system_prompt_template, transcript, selected_agent
-    )
+    task_prompt = get_task_prompt(selected_agent)
+    system_prompt = render_system_prompt(system_prompt_template, transcript, task_prompt)
     simple_turns.insert(0, SimpleTurn(role="system", content=system_prompt))
 
-    return SimpleTranscript(session_id=session_id, messages=simple_turns)
+    return SimpleTranscript(
+        session_id=session_id,
+        messages=simple_turns,
+        patient_first_name=transcript["sim_context"]["patient_profile"]["first_name"],
+        patient_last_name=transcript["sim_context"]["patient_profile"]["last_name"],
+        patient_gender=transcript["sim_context"]["patient_profile"]["gender"],
+        patient_age_in_years=transcript["sim_context"]["patient_profile"]["age_in_years"],
+        task_prompt=task_prompt,
+    )
 
 
 def render_system_prompt(
-    system_prompt_template: str, transcript: FullRawTranscript, selected_agent: AgentName
+    system_prompt_template: str, transcript: FullRawTranscript, task_prompt: str
 ):
     context = dict(
         patient_first_name=transcript["sim_context"]["patient_profile"]["first_name"],
         patient_last_name=transcript["sim_context"]["patient_profile"]["last_name"],
         patient_gender=transcript["sim_context"]["patient_profile"]["gender"],
         patient_age_in_years=transcript["sim_context"]["patient_profile"]["age_in_years"],
-        task_prompt=get_task_prompt(selected_agent),
+        task_prompt=task_prompt,
     )
     prompt = system_prompt_template
     for key, value in context.items():

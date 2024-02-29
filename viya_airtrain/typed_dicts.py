@@ -178,3 +178,8 @@ class ConversationTurn(TypedDict):
 class SimpleTranscript(TypedDict):
     messages: list[SimpleTurn]
     session_id: str
+    patient_first_name: str
+    patient_last_name: str
+    patient_gender: str
+    patient_age_in_years: str
+    task_prompt: str
