@@ -166,6 +166,7 @@ def to_agent_transcript(
     selected_agent: AgentName,
     system_prompt_template: str,
     use_fixed_task_prompts: bool,
+    isolate_agent: bool = False,
 ) -> AgentTranscript:
     """Extract the conversation to an agent-specific transcript ending on the agent's turn
 
@@ -184,6 +185,9 @@ def to_agent_transcript(
     use_fixed_task_prompts:
         If True, then for each given agent, that agent's task prompt will always be
         the same.
+    isolate_agent:
+        If True, then only turns involving the selected agent will be used, and no
+        others.
     """
     simple_turns: list[SimpleTurn] = []
     session_id = transcript["session_id"]
@@ -226,6 +230,14 @@ def to_agent_transcript(
 
     stop_index = len(simple_turns) + 1
     agent_turn_indexes = list(range(agent_start_turn_index, stop_index, 2))
+
+    if isolate_agent:
+        simple_turns = (
+            simple_turns[:1]
+            + simple_turns[agent_turn_indexes[0] : agent_turn_indexes[-1]]
+        )
+        original_start_index = agent_turn_indexes[0]
+        agent_turn_indexes = [1 + i - original_start_index for i in agent_turn_indexes]
 
     return AgentTranscript(
         session_id=session_id,
@@ -283,13 +295,18 @@ def randomly_select_agent(
     agent_names: list[AgentName], transcript: FullRawTranscript
 ) -> AgentName:
     "Choose an agent name for an agent appearing in the conversation"
-    appearing_agents = set()
     session_id = transcript["session_id"]
-    for message in transcript["messages"]:
-        appearing_agents.add(message["agent_name"])
+    appearing_agents = get_appearing_agents(transcript)
     choices = appearing_agents.intersection(agent_names)
     if len(choices) == 0:
         raise ValueError(
             f"Transcript {session_id} contains none of: {', '.join(agent_names)}"
         )
     return random.choice(list(choices))
+
+
+def get_appearing_agents(transcript: FullRawTranscript) -> set[AgentName]:
+    appearing_agents = set()
+    for message in transcript["messages"]:
+        appearing_agents.add(message["agent_name"])
+    return appearing_agents

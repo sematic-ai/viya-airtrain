@@ -7,6 +7,7 @@ from pathlib import Path
 
 from viya_airtrain.core_prompt_paraphrasing import randomized_core_prompt_templates
 from viya_airtrain.data_transforms import (
+    get_appearing_agents,
     multiplex_agent_transcript,
     randomly_select_agent,
     raw_transcript_to_conversation_turns,
@@ -58,6 +59,12 @@ def parse_args() -> argparse.Namespace:
         default=False,
         action="store_true",
         help="Advanced: open a pdb session while writing data.",
+    )
+    parser.add_argument(
+        "--isolate-agents",
+        default=False,
+        action="store_true",
+        help="Only include one agent at a time in resulting conversations.",
     )
     parser.add_argument(
         "--agent",
@@ -143,6 +150,7 @@ def process_split_turn_mode(
 def process_split_conversation_mode(
     output_path: Path,
     is_train: bool,
+    isolate_agents: bool,
     include_agents: list[AgentName],
     transcripts: list[FullRawTranscript],
     interactive: bool,
@@ -152,17 +160,31 @@ def process_split_conversation_mode(
     for transcript, system_prompt_template in zip(
         transcripts, randomized_core_prompt_templates()
     ):
-        selected_agent = randomly_select_agent(include_agents, transcript)
-        agent_transcript = to_agent_transcript(
-            transcript=transcript,
-            selected_agent=selected_agent,
-            system_prompt_template=system_prompt_template,
-            use_fixed_task_prompts=not is_train,
-        )
-        if is_train:
-            agent_transcripts.append(agent_transcript)
+        if isolate_agents:
+            # If agents are isolated, having an output transcript for each
+            # doesn't repeat any data.
+            selected_agents = list(
+                set(include_agents).intersection(get_appearing_agents(transcript))
+            )
         else:
-            agent_transcripts.extend(multiplex_agent_transcript(agent_transcript))
+            # If agents are NOT isolated, having an output transcript for
+            # each would repeat data: later agents would include conversation
+            # turns that were also present with earlier agents. So limit
+            # to selecting one agent per conversation.
+            selected_agents = [randomly_select_agent(include_agents, transcript)]
+
+        for agent in selected_agents:
+            agent_transcript = to_agent_transcript(
+                transcript=transcript,
+                isolate_agent=isolate_agents,
+                selected_agent=agent,
+                system_prompt_template=system_prompt_template,
+                use_fixed_task_prompts=not is_train,
+            )
+            if is_train:
+                agent_transcripts.append(agent_transcript)
+            else:
+                agent_transcripts.extend(multiplex_agent_transcript(agent_transcript))
 
     write_jsonls(output_path, agent_transcripts)
 
@@ -183,6 +205,7 @@ def main():
         process_split_conversation_mode(
             output_path=args.destination,
             is_train=True,
+            isolate_agents=args.isolate_agents,
             include_agents=args.include_agents,
             transcripts=train_transcripts,
             interactive=args.interactive,
@@ -190,6 +213,7 @@ def main():
         process_split_conversation_mode(
             output_path=args.test_destination,
             is_train=False,
+            isolate_agents=args.isolate_agents,
             include_agents=args.include_agents,
             transcripts=test_transcripts,
             interactive=args.interactive,
