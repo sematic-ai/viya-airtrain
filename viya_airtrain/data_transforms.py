@@ -233,8 +233,8 @@ def to_agent_transcript(
 
     if isolate_agent:
         simple_turns = (
-            simple_turns[:1]
-            + simple_turns[agent_turn_indexes[0] : agent_turn_indexes[-1]]
+            simple_turns[:1]  # system message
+            + simple_turns[agent_turn_indexes[0] : agent_turn_indexes[-1] + 2]
         )
         original_start_index = agent_turn_indexes[0]
         agent_turn_indexes = [1 + i - original_start_index for i in agent_turn_indexes]
